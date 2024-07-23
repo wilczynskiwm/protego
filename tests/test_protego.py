@@ -1148,6 +1148,30 @@ class TestProtego(TestCase):
         self.assertTrue(rp.can_fetch("https://www.site.local/s/", "*"))
         self.assertFalse(rp.can_fetch("https://www.site.local/?s=asd", "*"))
 
+    def test_can_fetch_with_rule(self):
+        content = (
+            "User-agent: * \n"
+            "Disallow: /disallowed \n"
+            "Allow: /allowed \n"
+            "Crawl-delay: 10"
+        )
+        rp = Protego.parse(content=content)
+
+        allowed, rule = rp.can_fetch("https://www.site.local/allowed", "*", return_rule=True)
+        self.assertTrue(allowed)
+        self.assertIsNotNone(rule)
+        self.assertEqual(rule.field, "allow")
+        self.assertEqual(rule.value._pattern, "/allowed")
+
+        allowed, rule = rp.can_fetch("https://www.site.local/disallowed", "*", return_rule=True)
+        self.assertFalse(allowed)
+        self.assertIsNotNone(rule)
+        self.assertEqual(rule.field, "disallow")
+        self.assertEqual(rule.value._pattern, "/disallowed")
+
+        allowed, rule = rp.can_fetch("https://www.site.local/other", "*", return_rule=True)
+        self.assertTrue(allowed)
+        self.assertIsNone(rule)
 
 @pytest.mark.parametrize(
     "allow,disallow,url,allowed",
