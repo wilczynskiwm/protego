@@ -220,15 +220,18 @@ class _RuleSet(object):
         )
 
     def can_fetch(self, url):
-        """Return if the url can be fetched."""
+        """Return a tuple (can_fetch, rule) where can_fetch is a boolean indicating 
+        if the URL can be fetched, and rule is the matching rule."""
         url = self._quote_path(url)
         allowed = True
+        matching_rule = None
         for rule in self._rules:
             if rule.value.match(url):
+                matching_rule = rule
                 if rule.field == "disallow":
                     allowed = False
                 break
-        return allowed
+        return allowed, matching_rule
 
     @property
     def crawl_delay(self):
@@ -491,10 +494,11 @@ class Protego(object):
         return matched_rule_set
 
     def can_fetch(self, url, user_agent):
-        """Return True if the user agent can fetch the URL, otherwise return False."""
+        """Return a tuple (can_fetch, rule) where can_fetch is a boolean indicating 
+        if the user agent can fetch the URL, and rule is the matching rule or None."""
         matched_rule_set = self._get_matching_rule_set(user_agent)
         if not matched_rule_set:
-            return True
+            return True, None
         return matched_rule_set.can_fetch(url)
 
     def crawl_delay(self, user_agent):
